@@ -1,19 +1,21 @@
-{
-  "Author": "tenyu",
-  "Name": "Easy Party Sort",
-  "Description": "Easily sort your party list by dragging and dropping members in the plugin window. Save your preferred order as named presets and switch between them anytime.",
-  "InternalName": "EasyPartySort",
-  "AssemblyVersion": "0.1.0.0",
-  "TestingAssemblyVersion": null,
-  "RepoUrl": "https://github.com/tenyu27/EasyPartySort",
-  "ApplicableVersion": "any",
-  "DalamudApiLevel": 14,
-  "Punchline": "Easily sort your party list in any order!",
-  "IsHide": false,
-  "IsTestingExclusive": false,
-  "DownloadLinkInstall": "https://github.com/tenyu27/EasyPartySort/releases/download/v0.1.0/EasyPartySort-v0.1.0.zip",
-  "DownloadLinkTesting": null,
-  "DownloadLinkUpdate": "https://github.com/tenyu27/EasyPartySort/releases/download/v0.1.0/EasyPartySort-v0.1.0.zip",
-  "LastUpdate": "1771065803",
-  "IconUrl": "https://raw.githubusercontent.com/tenyu27/EasyPartySort/master/Data/icon.png"
-}
+[
+  {
+    "Author": "tenyu",
+    "Name": "Easy Party Sort",
+    "Description": "Easily sort your party list by dragging and dropping members in the plugin window. Save your preferred order as named presets and switch between them anytime.",
+    "InternalName": "EasyPartySort",
+    "AssemblyVersion": "0.1.0.0",
+    "TestingAssemblyVersion": null,
+    "RepoUrl": "https://github.com/tenyu27/EasyPartySort",
+    "ApplicableVersion": "any",
+    "DalamudApiLevel": 14,
+    "Punchline": "Easily sort your party list in any order!",
+    "IsHide": false,
+    "IsTestingExclusive": false,
+    "DownloadLinkInstall": "https://github.com/tenyu27/EasyPartySort/releases/download/v0.1.0/EasyPartySort-v0.1.0.zip",
+    "DownloadLinkTesting": null,
+    "DownloadLinkUpdate": "https://github.com/tenyu27/EasyPartySort/releases/download/v0.1.0/EasyPartySort-v0.1.0.zip",
+    "LastUpdate": "1771065803",
+    "IconUrl": "https://raw.githubusercontent.com/tenyu27/EasyPartySort/master/Data/icon.png"
+  }
+]
