@@ -1,0 +1,76 @@
+# Build and publish plugin to a GitHub Release when a release is created.
+# The release zip is attached to the release and pluginmaster.json is updated.
+# Custom repo URL for users (use your default branch: master or main):
+# https://raw.githubusercontent.com/tenyu27/EasyPartySort/master/pluginmaster.json
+
+name: Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build-and-release:
+    runs-on: windows-2022
+    permissions:
+      contents: write  # upload release asset and update repo
+
+    steps:
+      - name: Checkout (tag for build)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Install .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Download Dalamud
+        run: |
+          Invoke-WebRequest -Uri https://goatcorp.github.io/dalamud-distrib/latest.zip -OutFile latest.zip
+          New-Item -ItemType Directory -Force "$env:AppData\XIVLauncher\addon\Hooks\dev" | Out-Null
+          Expand-Archive -Force latest.zip "$env:AppData\XIVLauncher\addon\Hooks\dev"
+
+      - name: Build
+        run: dotnet build EasyPartySort.sln --configuration Release --no-incremental
+
+      - name: Zip plugin
+        run: |
+          $tag = "${{ github.event.release.tag_name }}"
+          $out = "EasyPartySort\bin\x64\Release"
+          Compress-Archive -Path "$out\*" -DestinationPath "EasyPartySort-$tag.zip"
+
+      - name: Upload zip to release
+        run: gh release upload "${{ github.event.release.tag_name }}" "EasyPartySort-${{ github.event.release.tag_name }}.zip" --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkout default branch (for manifest update)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Update pluginmaster.json
+        run: |
+          $tag = "${{ github.event.release.tag_name }}"
+          $zipName = "EasyPartySort-$tag.zip"
+          $version = $tag -replace '^v', '' -replace '-.*', ''
+          $versionFour = if ($version -match '^(\d+)\.(\d+)\.(\d+)$') { "$version.0" } else { "$version.0.0.0" }
+          $ts = [int][double]::Parse((Get-Date -UFormat %s))
+          $zipUrl = "https://github.com/tenyu27/EasyPartySort/releases/download/$tag/$zipName"
+          $json = Get-Content -Raw pluginmaster.json | ConvertFrom-Json
+          $json[0].AssemblyVersion = $versionFour
+          $json[0].DownloadLinkInstall = $zipUrl
+          $json[0].DownloadLinkUpdate = $zipUrl
+          $json[0].LastUpdate = $ts.ToString()
+          $json | ConvertTo-Json -Depth 10 | Set-Content -Path pluginmaster.json -NoNewline
+
+      - name: Commit and push pluginmaster.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add pluginmaster.json
+          git diff --staged --quiet || (git commit -m "chore: update pluginmaster.json for ${{ github.event.release.tag_name }}" && git push)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

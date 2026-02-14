@@ -44,6 +44,14 @@ Be sure to also check out the [Dalamud Developer Docs][dalamud-docs] for helpful
 [dalamud-docs]: https://dalamud.dev
 [submit]: https://dalamud.dev/plugin-publishing/submission
 
+### Custom repository (install from this repo)
+
+1. In-game, open Dalamud settings with `/xlsettings` → **Experimental** tab.
+2. Under **Custom Plugin Repositories**, add:  
+   `https://raw.githubusercontent.com/tenyu27/EasyPartySort/master/pluginmaster.json`
+3. Open the Plugin Installer (`/xlplugins`), refresh; **Easy Party Sort** should appear. Install and enable.
+4. Use `/eps` to open the plugin window.
+
 ### Prerequisites
 
 SamplePlugin assumes all the following prerequisites are met:
