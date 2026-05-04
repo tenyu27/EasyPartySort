@@ -6,6 +6,8 @@ using System.Text;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
+using ECommons.Configuration;
+using EasyPartySort.UI;
 
 namespace EasyPartySort.Windows;
 
@@ -13,21 +15,19 @@ public class PresetEditWindow : Window, IDisposable
 {
     private const string PresetNamePayloadType = "EPS_PresetName";
 
-    private readonly Plugin _plugin;
     private string _presetName = "";
     private List<string> _names = new();
     private PartyOrderPreset? _preset;
     private bool _isNewPreset;
     private readonly byte[] _payloadBytes = new byte[256];
 
-    public PresetEditWindow(Plugin plugin)
+    public PresetEditWindow()
         : base("Preset##EasyPartySortPresetEdit", ImGuiWindowFlags.None)
     {
         SizeConstraints = new WindowSizeConstraints
         {
             MinimumSize = new Vector2(400, 500)
         };
-        _plugin = plugin;
     }
 
     public void Dispose() { }
@@ -65,8 +65,19 @@ public class PresetEditWindow : Window, IDisposable
 
     public override unsafe void Draw()
     {
+        if (!IsOpen)
+            return;
         if (_preset == null && _names.Count == 0)
             return;
+
+        bool open = IsOpen;
+        if (!ImGui.Begin(WindowName, ref open, ImGuiWindowFlags.None))
+        {
+            IsOpen = open;
+            ImGui.End();
+            return;
+        }
+        IsOpen = open;
 
         ImGui.Text("Preset name:");
         ImGui.SameLine();
@@ -129,7 +140,7 @@ public class PresetEditWindow : Window, IDisposable
                 return;
             if (_isNewPreset)
             {
-                _plugin.Configuration.Presets.Add(new PartyOrderPreset
+                EzConfig.Get<Configuration>().Presets.Add(new PartyOrderPreset
                 {
                     Name = name,
                     PlayerNames = new List<string>(_names)
@@ -141,11 +152,14 @@ public class PresetEditWindow : Window, IDisposable
                 _preset.PlayerNames.Clear();
                 _preset.PlayerNames.AddRange(_names);
             }
-            _plugin.Configuration.Save();
+            EzConfig.Save();
             IsOpen = false;
+            MainUI.RefetchAfterFrames(3);
         }
         ImGui.SameLine();
         if (ImGui.Button("Cancel"))
             IsOpen = false;
+
+        ImGui.End();
     }
 }

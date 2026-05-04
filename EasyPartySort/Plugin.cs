@@ -1,77 +1,83 @@
-using Dalamud.Game.Command;
-using Dalamud.IoC;
+using System.Collections.Generic;
+using System.Numerics;
 using Dalamud.Plugin;
-using Dalamud.Interface.Windowing;
-using Dalamud.Plugin.Services;
+using ECommons;
+using ECommons.Configuration;
+using ECommons.DalamudServices;
+using ECommons.Logging;
+using ECommons.Schedulers;
+using ECommons.SimpleGui;
+using EasyPartySort.UI;
 using EasyPartySort.Windows;
 
 namespace EasyPartySort;
 
 public sealed class Plugin : IDalamudPlugin
 {
-    [PluginService] internal static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
-    [PluginService] internal static ITextureProvider TextureProvider { get; private set; } = null!;
-    [PluginService] internal static ICommandManager CommandManager { get; private set; } = null!;
-    [PluginService] internal static IClientState ClientState { get; private set; } = null!;
-    [PluginService] internal static IPlayerState PlayerState { get; private set; } = null!;
-    [PluginService] internal static IDataManager DataManager { get; private set; } = null!;
-    [PluginService] internal static IPluginLog Log { get; private set; } = null!;
-    [PluginService] internal static IPartyList PartyList { get; private set; } = null!;
-
     private const string CommandName = "/eps";
 
-    public Configuration Configuration { get; init; }
+    public static Plugin? P { get; private set; }
 
-    public readonly WindowSystem WindowSystem = new("EasyPartySort");
-    internal MainWindow MainWindow { get; init; }
-    internal PresetEditWindow PresetEditWindow { get; init; }
+    public List<PartyListHelper.PartyMemberEntry>? Snapshot { get; set; }
+    public string LoadError { get; set; } = "";
+    public bool ShowLoadError { get; set; }
 
-    public Plugin()
+    internal PresetEditWindow PresetEditWindow { get; private set; } = null!;
+
+    public Plugin(IDalamudPluginInterface pi)
     {
-        Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
+        P = this;
+        ECommonsMain.Init(pi, this, ECommons.Module.DalamudReflector);
 
-        PresetEditWindow = new PresetEditWindow(this);
-        MainWindow = new MainWindow(this, PresetEditWindow);
-
-        WindowSystem.AddWindow(MainWindow);
-        WindowSystem.AddWindow(PresetEditWindow);
-
-        CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
+        _ = new TickScheduler(() =>
         {
-            HelpMessage = "Opens Easy Party Sort window."
+            EzConfig.Migrate<Configuration>();
+            EzConfig.Init<Configuration>();
+
+            PresetEditWindow = new PresetEditWindow();
+
+            EzConfigGui.Init(DrawMain, EzConfig.Get<Configuration>(), null, EzConfigGui.WindowType.Both);
+
+            if (EzConfigGui.Window != null)
+            {
+                EzConfigGui.Window.RespectCloseHotkey = true;
+                EzConfigGui.Window.SetSizeConstraints(new Vector2(800, 700), new Vector2(float.MaxValue, float.MaxValue));
+            }
+
+            Svc.PluginInterface.UiBuilder.Draw += DrawPresetEditWindow;
+
+            EzCmd.Add(CommandName, OnCommand, "Opens Easy Party Sort window.");
+
+            DuoLog.Information($"EasyPartySort loaded. Use {CommandName} to open the window.");
         });
-
-        // Tell the UI system that we want our windows to be drawn through the window system
-        PluginInterface.UiBuilder.Draw += WindowSystem.Draw;
-
-        // Adds a button for the main ui of the plugin
-        PluginInterface.UiBuilder.OpenMainUi += ToggleMainUi;
-
-        // Add a simple message to the log with level set to information
-        // Use /xllog to open the log window in-game
-        // Example Output: 00:57:54.959 | INF | [SamplePlugin] ===A cool log message from Sample Plugin===
-        Log.Information($"EasyPartySort loaded. Use {CommandName} to open the window.");
     }
 
     public void Dispose()
     {
-        // Unregister all actions to not leak anything during disposal of plugin
-        PluginInterface.UiBuilder.Draw -= WindowSystem.Draw;
-        PluginInterface.UiBuilder.OpenMainUi -= ToggleMainUi;
-        
-        WindowSystem.RemoveAllWindows();
-
-        MainWindow.Dispose();
-        PresetEditWindow.Dispose();
-
-        CommandManager.RemoveHandler(CommandName);
+        ECommonsMain.Dispose();
+        Svc.PluginInterface.UiBuilder.Draw -= DrawPresetEditWindow;
+        P = null;
     }
 
-    private void OnCommand(string command, string args)
+    private static void DrawMain()
     {
-        // In response to the slash command, toggle the display status of our main ui
-        MainWindow.Toggle();
+        if (EzConfigGui.Window != null && P != null)
+        {
+            var version = typeof(Plugin).Assembly.GetName().Version?.ToString() ?? "?";
+            var pluginName = ECommons.Reflection.DalamudReflector.GetPluginName() ?? "Easy Party Sort";
+            EzConfigGui.Window.WindowName = $"{pluginName} v{version}###EasyPartySort";
+        }
+        MainUI.Draw();
     }
-    
-    public void ToggleMainUi() => MainWindow.Toggle();
+
+    private static void DrawPresetEditWindow()
+    {
+        if (P?.PresetEditWindow != null)
+            P.PresetEditWindow.Draw();
+    }
+
+    private static void OnCommand(string command, string args)
+    {
+        EzConfigGui.Toggle();
+    }
 }

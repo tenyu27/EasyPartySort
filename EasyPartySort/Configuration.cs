@@ -1,4 +1,5 @@
 using Dalamud.Configuration;
+using ECommons.Configuration;
 using System;
 using System.Collections.Generic;
 
@@ -22,6 +23,6 @@ public class Configuration : IPluginConfiguration
 
     public void Save()
     {
-        Plugin.PluginInterface.SavePluginConfig(this);
+        EzConfig.Save();
     }
 }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Dalamud.Plugin.Services;
+using ECommons.DalamudServices;
 using Lumina.Excel.Sheets;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
@@ -37,9 +38,10 @@ public static unsafe class PartyListHelper
     /// Returns party members in the same order as shown in the in-game party list (sorted by HUD Index).
     /// Returns empty list if not in a party or on error.
     /// </summary>
-    public static List<PartyMemberEntry> GetPartyListInDisplayOrder(IDataManager dataManager)
+    public static List<PartyMemberEntry> GetPartyListInDisplayOrder(IDataManager? dataManager = null)
     {
         var result = new List<PartyMemberEntry>();
+        dataManager ??= Svc.Data;
         if (dataManager == null)
             return result;
 
@@ -97,7 +99,7 @@ public static unsafe class PartyListHelper
         }
         catch (Exception ex)
         {
-            Plugin.Log?.Error(ex, "PartyListHelper.GetPartyListInDisplayOrder failed");
+            Svc.Log?.Error(ex, "PartyListHelper.GetPartyListInDisplayOrder failed");
         }
 
         return result;
@@ -144,7 +146,7 @@ public static unsafe class PartyListHelper
         }
         catch (Exception ex)
         {
-            Plugin.Log?.Error(ex, "PartyListHelper.ApplyPartyOrder failed");
+            Svc.Log?.Error(ex, "PartyListHelper.ApplyPartyOrder failed");
         }
     }
 
@@ -170,7 +172,7 @@ public static unsafe class PartyListHelper
             string jobAbbr = classJobId.ToString();
             try
             {
-                var sheet = Plugin.DataManager?.GetExcelSheet<ClassJob>();
+                var sheet = Svc.Data?.GetExcelSheet<ClassJob>();
                 if (sheet != null)
                 {
                     var row = sheet.GetRow((uint)classJobId);
